@@ -69,6 +69,13 @@ export const HistoricalChart: React.FC<Props> = ({
     };
   }, [data]);
 
+  const yDomain = useMemo<[number | string, number | string]>(() => {
+    if (stats.min > 0 && stats.max > 0 && stats.min === stats.max) {
+      return [+(stats.min * 0.98).toFixed(4), +(stats.max * 1.02).toFixed(4)];
+    }
+    return ['auto', 'auto'];
+  }, [stats.min, stats.max]);
+
   return (
     <div className="bg-[#111827] border border-gray-800 rounded-3xl p-6 sm:p-8 shadow-xl shadow-black/40">
       {/* Chart Header */}
@@ -170,7 +177,7 @@ export const HistoricalChart: React.FC<Props> = ({
                 fontSize={11}
                 tickLine={false}
                 axisLine={false}
-                domain={['auto', 'auto']}
+                domain={yDomain}
                 tickFormatter={(val: number) => (val < 1 ? val.toFixed(3) : val.toFixed(1))}
               />
               <Tooltip

@@ -42,11 +42,14 @@ export const CurrencyConverter: React.FC<Props> = ({
   const [showFeeOptions, setShowFeeOptions] = useState<boolean>(false);
   const inputId = useId();
 
+  // Sanitized Rate against undefined / NaN
+  const safeRate = typeof rate === 'number' && !isNaN(rate) && rate > 0 ? rate : 1;
+
   // Calculations
-  const grossResult = amount * rate;
+  const grossResult = amount * safeRate;
   const feeDeduction = grossResult * (feePercentage / 100);
   const netResult = grossResult - feeDeduction;
-  const inverseRate = rate > 0 ? 1 / rate : 0;
+  const inverseRate = safeRate > 0 ? 1 / safeRate : 0;
 
   const formatCurrency = (val: number, decimals = 2) => {
     return new Intl.NumberFormat('en-US', {
@@ -185,7 +188,7 @@ export const CurrencyConverter: React.FC<Props> = ({
           <Sparkles className="w-4 h-4 text-emerald-400" />
           <span className="text-gray-400">Live Rate:</span>
           <span className="text-white font-mono font-semibold">
-            1 {fromCurrency.code} = {rate.toFixed(4)} {toCurrency.code}
+            1 {fromCurrency.code} = {safeRate.toFixed(4)} {toCurrency.code}
           </span>
           <span className="text-gray-600 font-mono">|</span>
           <span className="text-gray-400">

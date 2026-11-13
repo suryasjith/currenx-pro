@@ -12,6 +12,7 @@ export function useCurrencyRates(baseCurrency: string) {
   
   const timerRef = useRef<number | null>(null);
   const countdownTimerRef = useRef<number | null>(null);
+  const activeRequestIdRef = useRef<number>(0);
 
   // Online / offline listeners
   useEffect(() => {
@@ -30,16 +31,24 @@ export function useCurrencyRates(baseCurrency: string) {
   const loadRates = useCallback(async (isManual = false) => {
     if (isManual) setLoading(true);
     setError(null);
+    const requestId = ++activeRequestIdRef.current;
+
     try {
       const result = await fetchLatestRates(baseCurrency);
+      // Discard stale out-of-order response if user changed base in the meantime
+      if (requestId !== activeRequestIdRef.current) return;
+
       setRates(result.data.rates);
       setLastUpdated(new Date(result.data.timestamp || Date.now()));
       setSource(result.source);
       setRefreshCountdown(60);
     } catch (err) {
+      if (requestId !== activeRequestIdRef.current) return;
       setError(err instanceof Error ? err.message : 'Failed to fetch rates');
     } finally {
-      setLoading(false);
+      if (requestId === activeRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [baseCurrency]);
 

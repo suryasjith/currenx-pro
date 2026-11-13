@@ -17,24 +17,26 @@ export async function fetchLatestRates(baseCurrency: string): Promise<{ data: Ex
     const frankfurterRes = await fetch(`https://api.frankfurter.dev/v1/latest?base=${baseCurrency}`);
     if (frankfurterRes.ok) {
       const json = await frankfurterRes.json();
-      const responseData: ExchangeRatesResponse = {
-        base: json.base,
-        date: json.date,
-        rates: { ...json.rates, [baseCurrency]: 1 },
-        timestamp: Date.now()
-      };
-      
-      // Save to localStorage
-      try {
-        localStorage.setItem(cacheKey, JSON.stringify({
-          timestamp: Date.now(),
-          data: responseData
-        } as CachedRates));
-      } catch (e) {
-        console.warn('LocalStorage error:', e);
+      if (json && json.rates && typeof json.rates === 'object' && Object.keys(json.rates).length > 3) {
+        const responseData: ExchangeRatesResponse = {
+          base: json.base,
+          date: json.date,
+          rates: { ...json.rates, [baseCurrency]: 1 },
+          timestamp: Date.now()
+        };
+        
+        // Save to localStorage
+        try {
+          localStorage.setItem(cacheKey, JSON.stringify({
+            timestamp: Date.now(),
+            data: responseData
+          } as CachedRates));
+        } catch (e) {
+          console.warn('LocalStorage error:', e);
+        }
+        
+        return { data: responseData, source: 'network' };
       }
-      
-      return { data: responseData, source: 'network' };
     }
   } catch (err) {
     console.warn('Frankfurter API failed, trying secondary fallback:', err);
@@ -45,7 +47,7 @@ export async function fetchLatestRates(baseCurrency: string): Promise<{ data: Ex
     const erRes = await fetch(`https://open.er-api.com/v6/latest/${baseCurrency}`);
     if (erRes.ok) {
       const json = await erRes.json();
-      if (json.result === 'success') {
+      if (json && json.result === 'success' && json.rates && typeof json.rates === 'object' && Object.keys(json.rates).length > 3) {
         const responseData: ExchangeRatesResponse = {
           base: json.base_code,
           date: json.time_last_update_utc ? new Date(json.time_last_update_utc).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
